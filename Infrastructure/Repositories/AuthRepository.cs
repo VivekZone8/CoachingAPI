@@ -22,7 +22,7 @@ namespace Infrastructure.Repositories
             using var connection = _connectionFactory.CreateConnection();
 
             const string sql = """
-            SELECT Id, Name, Email, PasswordHash, Role, IsActive, CreatedAt,FailedLoginAttempts, LockoutEnd
+            SELECT Id, Name,CoachingId, Email, PasswordHash, Role, IsActive, CreatedAt,FailedLoginAttempts, LockoutEnd
             FROM Users
             WHERE Email = @Email
             """;
