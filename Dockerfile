@@ -1,8 +1,8 @@
-# Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# Stage 1: Build (.NET 10 SDK)
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# सभी प्रोजेक्ट्स की csproj फाइलें कॉपी करके रिस्टोर करना
+# csproj फाइल्स कॉपी करके रिस्टोर करना
 COPY ["Api/Api.csproj", "Api/"]
 COPY ["Application/Application.csproj", "Application/"]
 COPY ["Domain/Domain.csproj", "Domain/"]
@@ -15,12 +15,11 @@ COPY . .
 WORKDIR "/src/Api"
 RUN dotnet publish "Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# Stage 2: Runtime (.NET 10 ASP.NET Runtime)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Render के लिए पोर्ट 8080 सेट करना
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
