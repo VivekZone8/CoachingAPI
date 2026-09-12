@@ -19,7 +19,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("Angular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200") 
+        policy.WithOrigins("http://localhost:4200", "https://coaching-frontend-ezsy.onrender.com/")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
