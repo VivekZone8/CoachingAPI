@@ -22,23 +22,101 @@ namespace Application.Services
             _jwtTokenService = jwtTokenService;
         }
 
-        public async Task<LoginResponse?> LoginAsync(LoginRequest request)
+        //public async Task<LoginResponse?> LoginAsync(LoginRequest request)
+        //{
+        //    var user = await _authRepository.GetUserByEmailAsync(request.Email);
+
+        //    if (user == null || !user.IsActive)
+        //        return null;
+
+        //    if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
+        //        return null;
+
+        //    var token = _jwtTokenService.GenerateToken(user);
+
+        //    return new LoginResponse
+        //    {
+        //        AccessToken = token,
+        //        ExpiresAt = DateTime.UtcNow.AddMinutes(30)
+        //    };
+        //}
+
+        public async Task<LoginResponse> LoginAsync(LoginRequest request, string ipAddress, string userAgent)
         {
+            var deviceType = ParseDeviceType(userAgent);
             var user = await _authRepository.GetUserByEmailAsync(request.Email);
 
-            if (user == null || !user.IsActive)
-                return null;
+            if (user == null)
+            {
+                return new LoginResponse { IsSuccess = false, Message = "Invalid email or password." };
+            }
 
+            if (!user.IsActive)
+            {
+                await _authRepository.InsertLoginLogAsync(user.Id, ipAddress, userAgent, deviceType, false, "Inactive Account");
+                return new LoginResponse { IsSuccess = false, Message = "Your account is deactivated." };
+            }
+
+            // CHECK 1: Kya account blocked hai?
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+            {
+                var remainingMinutes = Math.Ceiling((user.LockoutEnd.Value - DateTime.UtcNow).TotalMinutes);
+
+                await _authRepository.InsertLoginLogAsync(user.Id, ipAddress, userAgent, deviceType, false, "Account Blocked / Lockout Active");
+
+                return new LoginResponse
+                {
+                    IsSuccess = false,
+                    Message = $"Too many failed attempts. Your account is locked. Try again after {remainingMinutes} minutes."
+                };
+            }
+
+            // CHECK 2: Password Match
             if (!_passwordHasher.Verify(request.Password, user.PasswordHash))
-                return null;
+            {
+                await _authRepository.HandleFailedAttemptAsync(user.Id, user.FailedLoginAttempts);
+
+                await _authRepository.InsertLoginLogAsync(user.Id, ipAddress, userAgent, deviceType, false, "Invalid Password");
+
+                int attemptsLeft = 5 - (user.FailedLoginAttempts + 1);
+                string message = attemptsLeft > 0
+                    ? $"Invalid password. {attemptsLeft} attempts remaining before account gets locked."
+                    : "Your account is locked for 15 minutes due to 5 consecutive failed attempts.";
+
+                return new LoginResponse { IsSuccess = false, Message = message };
+            }
+
+            // SUCCESSFUL LOGIN
+            await _authRepository.ResetLockoutAsync(user.Id);
+
+            // Audit Log Entry
+            var logId = await _authRepository.InsertLoginLogAsync(user.Id, ipAddress, userAgent, deviceType, true, null);
 
             var token = _jwtTokenService.GenerateToken(user);
 
             return new LoginResponse
             {
+                IsSuccess = true,
+                Message = "Login successful.",
                 AccessToken = token,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(30)
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
+                SessionLogId = logId
             };
+        }
+
+        public async Task LogoutAsync(long sessionLogId)
+        {
+            await _authRepository.UpdateLogoutTimeAsync(sessionLogId);
+        }
+
+        private static string ParseDeviceType(string? userAgent)
+        {
+            if (string.IsNullOrWhiteSpace(userAgent)) return "Unknown";
+
+            var ua = userAgent.ToLowerInvariant();
+            if (ua.Contains("ipad") || ua.Contains("tablet")) return "Tablet";
+            if (ua.Contains("mobile") || ua.Contains("android") || ua.Contains("iphone")) return "Mobile";
+            return "Desktop / Web";
         }
         public async Task<int> RegisterAsync(RegisterRequest request)
         {
@@ -59,5 +137,7 @@ namespace Application.Services
 
             return await _authRepository.CreateUserAsync(user);
         }
+
+
     }
 }
