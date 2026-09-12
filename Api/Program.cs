@@ -1,4 +1,4 @@
-using Api.Infrastructure;
+﻿using Api.Infrastructure;
 using Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,22 +8,24 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Controllers & Dependencies
 builder.Services.AddControllers();
 builder.Services.AddInfrastructure(builder.Configuration);
-
-// 1. In-Memory Cache register kiya (Blacklisted / Logged-out tokens ko temporarily store karne ke liye)
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpContextAccessor();
 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Angular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins("http://localhost:4200") // प्रोडक्शन URL यहाँ जोड़ें
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
+// Authentication & JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -39,24 +41,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwt["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwt["Key"]!)),
-            ClockSkew = TimeSpan.Zero // Strict expiry check (no default 5-minute leeway)
+            ClockSkew = TimeSpan.Zero
         };
 
-        // 2. YAHAN TOKEN INVALIDATE CHECK HO RAHA HAI:
-        // Har authenticated request par token check hoga ki kya user logout kar chuka hai
         options.Events = new JwtBearerEvents
         {
             OnTokenValidated = context =>
             {
                 var cache = context.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
 
-                // Request header se incoming token nikaala
                 var authHeader = context.Request.Headers["Authorization"].ToString();
                 var token = authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
                     ? authHeader.Substring("Bearer ".Length).Trim()
                     : authHeader.Trim();
 
-                // Agar yeh token blacklist cache me present hai, toh request ko block (401) kar do
                 if (cache.TryGetValue($"blacklist:{token}", out _))
                 {
                     context.Fail("This token has been revoked / logged out.");
@@ -69,8 +67,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHttpContextAccessor();
 
+// Swagger Gen
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -89,7 +87,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Enter JWT token"
     });
 
-    // Swagger UI me Bearer token pass karne ke liye requirement
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         {
@@ -101,29 +98,29 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// SuperAdmin Seeder
+// Database Seeder
 using (var scope = app.Services.CreateScope())
 {
-    var seeder = scope.ServiceProvider
-        .GetRequiredService<SuperAdminSeeder>();
-
+    var seeder = scope.ServiceProvider.GetRequiredService<SuperAdminSeeder>();
     await seeder.SeedAsync();
 }
 
+// Swagger (Production & Development दोनों में चालू)
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
-    options.SwaggerEndpoint(
-        "/swagger/v1/swagger.json",
-        "My API v1");
-
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "My API v1");
     options.RoutePrefix = "swagger";
 });
 
-app.UseHttpsRedirection();
+// Https redirection सिर्फ local environment के लिए
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("Angular");
 
-// Middleware order: Pehle Authentication, fir Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
