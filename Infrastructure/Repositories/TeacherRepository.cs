@@ -18,7 +18,29 @@ namespace Infrastructure.Repositories
             _connectionFactory = connectionFactory;
         }
 
-        public async Task<bool> ExistsAsync(int teacherId, int coachingId)
+        public async Task<int> CreateAsync(
+            Teacher teacher,
+            string passwordHash)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+
+            return await connection.ExecuteScalarAsync<int>(
+                "sp_Teacher_Create",
+                new
+                {
+                    teacher.CoachingId,
+                    teacher.Name,
+                    teacher.Email,
+                    PasswordHash = passwordHash,
+                    teacher.Phone,
+                    teacher.Qualification
+                },
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<bool> ExistsAsync(
+            int teacherId,
+            int coachingId)
         {
             using var connection = _connectionFactory.CreateConnection();
 
@@ -32,14 +54,18 @@ namespace Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure);
         }
 
-        public async Task<int> CreateAsync(Teacher teacher)
+        public async Task<IEnumerable<Teacher>> GetAllAsync(
+            int coachingId)
         {
-            throw new NotImplementedException();
-        }
+            using var connection = _connectionFactory.CreateConnection();
 
-        public async Task<IEnumerable<Teacher>> GetAllAsync(int coachingId)
-        {
-            throw new NotImplementedException();
+            return await connection.QueryAsync<Teacher>(
+                "sp_Teacher_GetAll",
+                new
+                {
+                    CoachingId = coachingId
+                },
+                commandType: CommandType.StoredProcedure);
         }
     }
 }
