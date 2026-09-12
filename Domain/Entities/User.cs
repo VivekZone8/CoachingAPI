@@ -15,5 +15,9 @@ namespace Domain.Entities
         public UserRole Role { get; set; } 
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
+
+        // New Lockout Properties
+        public int FailedLoginAttempts { get; set; }
+        public DateTime? LockoutEnd { get; set; }
     }
 }

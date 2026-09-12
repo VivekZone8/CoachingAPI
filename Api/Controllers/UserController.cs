@@ -23,6 +23,14 @@ namespace Api.Controllers
         public async Task<IActionResult> Create(CreateUserRequest request)
         {
             var id = await _userService.CreateAsync(request);
+            if (id == 0)
+            {
+                return Ok(new
+                {
+                    message = "User Already Register",
+                    id
+                });
+            }
 
             return Ok(new
             {

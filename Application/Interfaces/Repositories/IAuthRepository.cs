@@ -9,5 +9,9 @@ namespace Application.Interfaces.Repositories
     {
         Task<User?> GetUserByEmailAsync(string email);
         Task<int> CreateUserAsync(User user);
+        Task<long> InsertLoginLogAsync(int userId, string? ipAddress, string? userAgent, string? device, bool isSuccess, string? failureReason);
+        Task HandleFailedAttemptAsync(int userId, int currentFailedAttempts);
+        Task ResetLockoutAsync(int userId);
+        Task UpdateLogoutTimeAsync(long sessionLogId);
     }
 }
