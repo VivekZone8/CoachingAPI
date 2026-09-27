@@ -34,9 +34,9 @@ namespace Application.Services
                 if (string.IsNullOrWhiteSpace(request.Password))
                     throw new ArgumentException("Password is required.");
 
-                if (request.Password.Length < 8)
-                    throw new ArgumentException(
-                        "Password must be at least 8 characters.");
+                //if (request.Password.Length < 8)
+                //    throw new ArgumentException(
+                //        "Password must be at least 8 characters.");
 
                 var email = request.Email.Trim().ToLowerInvariant();
 
