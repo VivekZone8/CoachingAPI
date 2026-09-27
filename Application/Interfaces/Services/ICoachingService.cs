@@ -1,10 +1,12 @@
-﻿using System;
+﻿using Application.DTOs.Coaching;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Application.Interfaces.Services
 {
-    internal interface ICoachingService
+    public interface ICoachingService
     {
+        Task<CoachingResponse> AddAsync(AddCoachingRequest request);
     }
 }

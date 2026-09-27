@@ -9,5 +9,7 @@ namespace Application.Interfaces.Repositories
     {
         Task<bool> EmailExistsAsync(string email);
         Task<int> CreateAsync(User user);
+
+        Task<bool> CheckCoachingExistsAsync(int CoachingId);
     }
 }
