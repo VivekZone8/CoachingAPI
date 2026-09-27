@@ -5,6 +5,7 @@ using Application.Interfaces.Services;
 using Infrastructure.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,6 +14,7 @@ using System.Text;
 
 namespace Api.Controllers;
 
+[EnableRateLimiting("login")]
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController : ControllerBase
