@@ -1,10 +1,13 @@
-﻿using System;
+﻿using Application.DTOs.Students;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Application.Interfaces.Services
 {
-    internal interface IStudentService
+    public  interface IStudentService
     {
+        Task<RegisterStudentResponse> RegisterAsync(
+           RegisterStudentRequest request);
     }
 }
