@@ -17,9 +17,7 @@
     <Folder Include="DTOs\Attendance\" />
     <Folder Include="DTOs\Fees\" />
     <Folder Include="DTOs\Subjects\" />
-    <Folder Include="DTOs\Students\" />
     <Folder Include="DTOs\Timetable\" />
-    <Folder Include="DTOs\Coaching\" />
     <Folder Include="DTOs\Exams\" />
     <Folder Include="DTOs\Results\" />
   </ItemGroup>

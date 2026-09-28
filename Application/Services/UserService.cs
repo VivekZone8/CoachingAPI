@@ -22,8 +22,7 @@ namespace Application.Services
             _passwordHasher = passwordHasher;
         }
 
-        public async Task<int> CreateAsync(
-    CreateUserRequest request)
+        public async Task<int> CreateAsync(CreateUserRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ArgumentException("Name is required.");
@@ -33,6 +32,8 @@ namespace Application.Services
 
             if (string.IsNullOrWhiteSpace(request.Password))
                 throw new ArgumentException("Password is required.");
+            if (await _userRepository.CheckCoachingExistsAsync((int)request.CoachingId))
+                throw new ArgumentException("Coaching Not foud");
 
             if (await _userRepository.EmailExistsAsync(request.Email))
                 throw new ArgumentException("Email already exists.");

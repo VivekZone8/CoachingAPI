@@ -69,5 +69,18 @@ namespace Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure);
         }
+
+        public async Task<bool> CheckCoachingExistsAsync(int CoachingId)
+        {
+            using var connection = _connectionFactory.CreateConnection();
+
+            const string checkQuery = @"
+            SELECT COUNT(*) 
+            FROM Coachings 
+            WHERE Id = @CoachingId";
+
+            int ans= await connection.ExecuteScalarAsync<int>(checkQuery, new { CoachingId });
+            return ans ==0 ? true : false;
+        }
     }
 }
