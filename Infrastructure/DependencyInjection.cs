@@ -1,9 +1,11 @@
 ﻿using Api.Infrastructure.Authentication;
+using Application.Interfaces;
 using Application.Interfaces.Repositories;
 using Application.Interfaces.Services;
 using Application.Services;
 using Infrastructure.Authentication;
 using Infrastructure.Data;
+using Infrastructure.Payments.Razorpay;
 using Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,6 +64,10 @@ public static class DependencyInjection
 
         services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
         services.AddScoped<IEnrollmentService, EnrollmentService>();
+
+        services.AddScoped<IPaymentServices, PaymentServices>();
+        services.AddScoped<IPaymentRepository,PaymentRepository>();
+        services.AddScoped<IPaymentGateway, RazorpayPaymentGateway>();
 
         return services;
     }
