@@ -110,7 +110,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("Angular");
-
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
